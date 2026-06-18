@@ -1,0 +1,20 @@
+#!/bin/sh
+echo "🔍 Validating Conventional Commit message..."
+
+# Get the commit message from the file passed as an argument
+commit_msg_file="$1"
+commit_msg=$(cat "$commit_msg_file")
+
+# Define the Conventional Commit regex pattern
+pattern="^(feat|fix|chore|docs|style|refactor|perf|test|ci|build|revert)(\([^)]+\))?!?: .{1,}$"
+
+# Check if commit message matches the pattern
+if ! echo "$commit_msg" | grep -E -q "$pattern"; then
+    echo "❌ Commit message does not follow Conventional Commits format!"
+    echo "   Example: 'feat(auth): add login functionality'"
+    echo "   See https://www.conventionalcommits.org/ for details."
+    exit 1
+fi
+
+echo "✅ Commit message is valid!"
+exit 0

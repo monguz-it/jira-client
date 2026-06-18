@@ -1,0 +1,10 @@
+node_modules/
+vendor/
+dist/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+.jira-client.env
+.phpunit.result.cache
+.php-cs-fixer.cache

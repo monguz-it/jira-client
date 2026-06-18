@@ -1,0 +1,30 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Jira CLI Client - Standalone PHP script for Jira Cloud.
+ * Built from source files. Do not edit directly.
+ *
+ * @author  Monguz <monguz@gmail.com>
+ * @version {{version}}
+ * @license MIT
+ */
+
+{{classes}}
+
+define('JIRA_CLIENT_VERSION', '{{version}}');
+
+// Bootstrap
+
+$output = new Output();
+$app = new App(new CommandParser($argv), $output);
+
+try {
+    $app->run();
+} catch (CommandException $e) {
+    $output->error($e->getMessage());
+    exit(1);
+} catch (RuntimeException $e) {
+    $output->error($e->getMessage());
+    exit(1);
+}

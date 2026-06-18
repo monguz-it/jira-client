@@ -1,0 +1,37 @@
+{
+    "name": "monguz-it/jira-client",
+    "description": "Standalone PHP CLI tool for Jira Cloud",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Monguz",
+            "email": "monguz@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "ext-curl": "*",
+        "ext-mbstring": "*"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^1.12",
+        "phpunit/phpunit": "^9.6",
+        "friendsofphp/php-cs-fixer": "^3.65"
+    },
+    "scripts": {
+        "build": "php bin/build",
+        "test": "phpunit --no-coverage",
+        "lint": "phpstan analyze --no-progress",
+        "cs": "php-cs-fixer fix --dry-run --diff",
+        "cs-fix": "php-cs-fixer fix",
+        "check": [
+            "@lint",
+            "@cs",
+            "@test"
+        ],
+        "install-dist": [
+            "@build",
+            "cp dist/jira-client ~/.local/bin/jira-client"
+        ]
+    }
+}

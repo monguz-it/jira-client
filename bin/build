@@ -1,0 +1,35 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Builds dist/jira-client by concatenating all src/*.php files into the template.
+ */
+
+$srcDir = __DIR__ . '/../src';
+$distDir = __DIR__ . '/../dist';
+$template = file_get_contents(__DIR__ . '/template');
+
+$version = trim(shell_exec('git describe --tags --abbrev=0 2>/dev/null') ?: 'dev');
+$template = str_replace('{{version}}', $version, $template);
+
+$files = glob("$srcDir/*.php");
+sort($files);
+
+$classes = '';
+foreach ($files as $file) {
+    $content = file_get_contents($file);
+    $content = preg_replace('/^<\?php\s*/', '', $content);
+    $content = preg_replace('/declare\(strict_types=1\);\s*/', '', $content);
+    $classes .= trim($content) . "\n\n";
+}
+
+$output = str_replace('{{classes}}', trim($classes), $template);
+
+if (!is_dir($distDir)) {
+    mkdir($distDir, 0755, true);
+}
+
+file_put_contents("$distDir/jira-client", $output);
+chmod("$distDir/jira-client", 0755);
+
+echo "✓ Built dist/jira-client\n";

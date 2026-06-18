@@ -1,0 +1,33 @@
+#!/bin/sh
+
+echo "Running pre-commit check at $(date +%H:%M:%S)..."
+
+STAGED_PHP=$(git diff --cached --name-only --diff-filter=ACM | grep '\.php$\|jira-client$' || true)
+
+if [ -n "$STAGED_PHP" ]; then
+    for file in $STAGED_PHP; do
+        if ! php -l "$file" > /dev/null 2>&1; then
+            echo "❌ Commit aborted - Syntax error in $file"
+            php -l "$file"
+            exit 1
+        fi
+    done
+
+    if ! php vendor/bin/php-cs-fixer fix --dry-run --diff --quiet; then
+        echo "❌ Commit aborted - Code style issues found. Run: composer cs-fix"
+        exit 1
+    fi
+
+    if ! php vendor/bin/phpstan analyse --no-progress; then
+        echo "❌ Commit aborted - PHPStan validation failed"
+        exit 1
+    fi
+
+    if ! php vendor/bin/phpunit --no-coverage 2>&1 | tail -1 | grep -q "OK\|No tests"; then
+        echo "❌ Commit aborted - PHPUnit tests failed"
+        exit 1
+    fi
+fi
+
+echo "✅ Commit validation passed!"
+exit 0
