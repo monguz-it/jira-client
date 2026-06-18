@@ -178,4 +178,29 @@ class AppTest extends TestCase
         $this->expectExceptionMessage('Invalid issue key format');
         $app->run();
     }
+
+    public function testBoardWithoutProjectOrBoardThrows(): void
+    {
+        putenv('JIRA_PROJECT');
+        putenv('JIRA_BOARD');
+        $parser = new CommandParser(['jira-client', 'board']);
+        $client = new JiraClient('https://test.atlassian.net', 'a@b.com', 'token');
+        $app = new App($parser, new Output(), $client);
+
+        $this->expectException(CommandException::class);
+        $this->expectExceptionMessage('Set JIRA_BOARD or JIRA_PROJECT');
+        $app->run();
+    }
+
+    public function testBoardWithBoardIdMakesApiCall(): void
+    {
+        putenv('JIRA_BOARD=99');
+        $parser = new CommandParser(['jira-client', 'board']);
+        $client = new JiraClient('https://test.atlassian.net', 'a@b.com', 'token');
+        $app = new App($parser, new Output(), $client);
+
+        $this->expectException(RuntimeException::class);
+        $app->run();
+        putenv('JIRA_BOARD');
+    }
 }

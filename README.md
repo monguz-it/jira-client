@@ -17,6 +17,7 @@ A standalone PHP CLI tool to interact with Jira Cloud. No dependencies required 
 - View issue details
 - Search issues with simple filters
 - List projects
+- Show board issues grouped by status
 - Create issues
 - Update issues
 - Add comments
@@ -49,12 +50,14 @@ JIRA_URL=https://yourcompany.atlassian.net
 JIRA_EMAIL=you@example.com
 JIRA_TOKEN=your-api-token
 JIRA_PROJECT=PROJ
+JIRA_BOARD=1
 ```
 
 - `JIRA_URL` — Your Jira Cloud URL (required)
 - `JIRA_EMAIL` — Your Atlassian account email (required)
 - `JIRA_TOKEN` — API token from [id.atlassian.com](https://id.atlassian.com/manage-profile/security/api-tokens) (required)
-- `JIRA_PROJECT` — Default project key, used by `search` and `create` when `--project` is omitted (optional)
+- `JIRA_PROJECT` — Default project key, used by `search`, `create`, and `board` when `--project` is omitted (optional)
+- `JIRA_BOARD` — Board ID for `board` command. If omitted, auto-discovered from project (optional)
 
 Environment variables take precedence over the `.env` file.
 
@@ -90,6 +93,10 @@ jira-client update PROJ-123 --label=frontend,backend --epic=PROJ-50
 
 # Change issue status
 jira-client transition PROJ-123 "In Progress"
+
+# Show board (auto-discovers board from JIRA_PROJECT)
+jira-client board
+jira-client board --assignee=me
 ```
 
 ## Requirements

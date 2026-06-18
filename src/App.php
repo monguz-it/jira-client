@@ -57,6 +57,9 @@ class App
             case 'update':
                 $this->commandUpdate();
                 break;
+            case 'board':
+                $this->commandBoard();
+                break;
             case 'projects':
                 $this->commandProjects();
                 break;
@@ -140,6 +143,7 @@ class App
         $this->output->line();
         $this->output->line($this->output->color('Commands:', Color::YELLOW));
         $this->output->line('  ' . $this->output->color('projects', Color::GREEN) . '                               List all projects');
+        $this->output->line('  ' . $this->output->color('board', Color::GREEN) . ' [--assignee=X] [--project=X]  Show board issues');
         $this->output->line('  ' . $this->output->color('search', Color::GREEN) . ' [--project=X] [--status=X]    Search issues');
         $this->output->line('         [--assignee=X] [--text=X]');
         $this->output->line('         [--label=X] [--epic=X]');
@@ -158,6 +162,7 @@ class App
         $this->output->line('  JIRA_EMAIL   your@email.com');
         $this->output->line('  JIRA_TOKEN   API token from id.atlassian.com');
         $this->output->line('  JIRA_PROJECT (optional) Default project key');
+        $this->output->line('  JIRA_BOARD   (optional) Board ID for board command');
         $this->output->line();
         $this->output->line($this->output->color('https://github.com/monguz-it/jira-client', Color::GRAY));
     }
@@ -445,6 +450,81 @@ class App
 
         $this->output->line();
         $this->output->success("$key updated (" . implode(', ', $changed) . ')');
+    }
+
+    /**
+     * @throws CommandException
+     */
+    private function commandBoard(): void
+    {
+        $boardId = $this->resolveBoardId();
+        $params = ['maxResults' => '50'];
+
+        if ($assignee = $this->parser->option('assignee')) {
+            $jql = $assignee === 'me'
+                ? 'assignee = currentUser()'
+                : "assignee = \"$assignee\"";
+            $params['jql'] = $jql;
+        }
+
+        $result = $this->getClient()->get("/rest/agile/1.0/board/$boardId/issue", $params);
+
+        if (empty($result['issues'])) {
+            $this->output->info('No issues on this board.');
+            return;
+        }
+
+        // Group by status
+        $grouped = [];
+        foreach ($result['issues'] as $issue) {
+            $status = $issue['fields']['status']['name'] ?? 'Unknown';
+            $grouped[$status][] = $issue;
+        }
+
+        $this->output->line();
+        foreach ($grouped as $status => $issues) {
+            $this->output->line($this->output->color("[$status]", Color::YELLOW));
+            foreach ($issues as $issue) {
+                $assigneeName = $issue['fields']['assignee']['displayName'] ?? '—';
+                $this->output->line(sprintf(
+                    '  %s  %s  %s',
+                    $this->output->color($issue['key'], Color::BOLD_BLUE),
+                    $this->output->color($assigneeName, Color::GRAY),
+                    mb_substr($issue['fields']['summary'] ?? '', 0, 55)
+                ));
+            }
+            $this->output->line();
+        }
+    }
+
+    /**
+     * @throws CommandException
+     */
+    private function resolveBoardId(): string
+    {
+        $boardId = getenv('JIRA_BOARD');
+        if ($boardId !== false && $boardId !== '') {
+            return $boardId;
+        }
+
+        $project = $this->parser->option('project') ?? $this->defaultProject();
+        if (!$project) {
+            throw new CommandException('Set JIRA_BOARD or JIRA_PROJECT (or use --project) to auto-discover the board');
+        }
+
+        $result = $this->getClient()->get('/rest/agile/1.0/board', ['projectKeyOrId' => $project]);
+
+        if (empty($result['values'])) {
+            throw new CommandException("No board found for project $project");
+        }
+
+        $board = $result['values'][0];
+        $this->output->line($this->output->color(
+            "Board: {$board['name']} (id: {$board['id']}) — set JIRA_BOARD={$board['id']} to skip discovery",
+            Color::GRAY
+        ));
+
+        return (string) $board['id'];
     }
 
     private function defaultProject(): ?string
