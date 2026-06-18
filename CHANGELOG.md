@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/monguz-it/jira-client/compare/v1.2.0...v1.3.0) (2026-06-18)
+
+
+### Features
+
+* add board command with auto-discovery ([c5cdf88](https://github.com/monguz-it/jira-client/commit/c5cdf888d71391b14c63273994e7e01eb012bff7))
+
 # [1.2.0](https://github.com/monguz-it/jira-client/compare/v1.1.0...v1.2.0) (2026-06-18)
 
 
