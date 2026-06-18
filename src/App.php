@@ -115,11 +115,11 @@ class App
             $message = "Missing environment variables. Required: JIRA_URL, JIRA_EMAIL, JIRA_TOKEN\n\n"
                 . "Export them in your shell:\n"
                 . "  export JIRA_URL=\"https://yourcompany.atlassian.net\"\n"
-                . "  export JIRA_EMAIL=\"you@example.com\"\n"
+                . "  export JIRA_EMAIL=\"ajeje@brazorf.com\"\n"
                 . "  export JIRA_TOKEN=\"your-api-token\"\n\n"
                 . "Or create a .jira-client.env file in the current directory:\n"
                 . "  JIRA_URL=https://yourcompany.atlassian.net\n"
-                . "  JIRA_EMAIL=you@example.com\n"
+                . "  JIRA_EMAIL=ajeje@brazorf.com\n"
                 . '  JIRA_TOKEN=your-api-token';
             throw new CommandException($message);
         }
@@ -159,7 +159,7 @@ class App
         $this->output->line();
         $this->output->line($this->output->color('Environment:', Color::YELLOW));
         $this->output->line('  JIRA_URL     https://yourcompany.atlassian.net');
-        $this->output->line('  JIRA_EMAIL   your@email.com');
+        $this->output->line('  JIRA_EMAIL   ajeje@brazorf.com');
         $this->output->line('  JIRA_TOKEN   API token from id.atlassian.com');
         $this->output->line('  JIRA_PROJECT (optional) Default project key');
         $this->output->line('  JIRA_BOARD   (optional) Board ID for board command');

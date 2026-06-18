@@ -47,7 +47,7 @@ Set environment variables or create a `.jira-client.env` file in your working di
 
 ```env
 JIRA_URL=https://yourcompany.atlassian.net
-JIRA_EMAIL=you@example.com
+JIRA_EMAIL=ajeje@brazorf.com
 JIRA_TOKEN=your-api-token
 JIRA_PROJECT=PROJ
 JIRA_BOARD=1
