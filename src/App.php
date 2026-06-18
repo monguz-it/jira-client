@@ -139,9 +139,11 @@ class App
         $this->output->line('  ' . $this->output->color('show', Color::GREEN) . ' <key>                          Show issue details');
         $this->output->line('  ' . $this->output->color('search', Color::GREEN) . ' [--project=X] [--status=X]    Search issues');
         $this->output->line('         [--assignee=X] [--text=X]');
+        $this->output->line('         [--label=X] [--epic=X]');
         $this->output->line('  ' . $this->output->color('projects', Color::GREEN) . '                               List all projects');
         $this->output->line('  ' . $this->output->color('create', Color::GREEN) . ' --project=X --summary="..."   Create an issue');
         $this->output->line('         [--type=Task] [--description="..."]');
+        $this->output->line('         [--label=X] [--epic=X]');
         $this->output->line('  ' . $this->output->color('comment', Color::GREEN) . ' <key> "text"                  Add a comment');
         $this->output->line('  ' . $this->output->color('transition', Color::GREEN) . ' <key> "Status Name"          Change issue status');
         $this->output->line();
@@ -230,6 +232,12 @@ class App
         if ($text = $this->parser->option('text')) {
             $conditions[] = "text ~ \"$text\"";
         }
+        if ($label = $this->parser->option('label')) {
+            $conditions[] = "labels = \"$label\"";
+        }
+        if ($epic = $this->parser->option('epic')) {
+            $conditions[] = "parent = \"$epic\"";
+        }
 
         if (empty($conditions)) {
             throw new CommandException('Provide at least one filter: --project, --status, --assignee, --text');
@@ -277,6 +285,9 @@ class App
         $type = $this->parser->option('type', 'Task');
         $description = $this->parser->option('description');
 
+        $label = $this->parser->option('label');
+        $epic = $this->parser->option('epic');
+
         $body = [
             'fields' => [
                 'project' => ['key' => $project],
@@ -294,6 +305,12 @@ class App
                     'content' => [['type' => 'text', 'text' => $description]],
                 ]],
             ];
+        }
+        if ($label) {
+            $body['fields']['labels'] = [$label];
+        }
+        if ($epic) {
+            $body['fields']['parent'] = ['key' => $epic];
         }
 
         $result = $this->getClient()->post('/rest/api/3/issue', $body);

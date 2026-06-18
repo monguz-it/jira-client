@@ -98,4 +98,40 @@ class AppTest extends TestCase
         $this->expectExceptionMessage('Provide at least one filter');
         $app->run();
     }
+
+    public function testSearchWithLabelIsValidFilter(): void
+    {
+        putenv('JIRA_PROJECT');
+        $parser = new CommandParser(['jira-client', 'search', '--label=backend']);
+        $client = new JiraClient('https://test.atlassian.net', 'a@b.com', 'token');
+        $app = new App($parser, new Output(), $client);
+
+        // Should throw RuntimeException (HTTP), not CommandException (missing filter)
+        $this->expectException(RuntimeException::class);
+        $app->run();
+    }
+
+    public function testSearchWithEpicIsValidFilter(): void
+    {
+        putenv('JIRA_PROJECT');
+        $parser = new CommandParser(['jira-client', 'search', '--epic=PROJ-100']);
+        $client = new JiraClient('https://test.atlassian.net', 'a@b.com', 'token');
+        $app = new App($parser, new Output(), $client);
+
+        $this->expectException(RuntimeException::class);
+        $app->run();
+    }
+
+    public function testHelpShowsLabelAndEpicOptions(): void
+    {
+        $parser = new CommandParser(['jira-client', 'help']);
+        $app = new App($parser, new Output());
+
+        ob_start();
+        $app->run();
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('--label', $output);
+        $this->assertStringContainsString('--epic', $output);
+    }
 }

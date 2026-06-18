@@ -71,12 +71,14 @@ jira-client show PROJ-123
 
 # Search issues
 jira-client search --project=PROJ --status="To Do" --assignee=me --text="keyword"
+jira-client search --project=PROJ --label=backend --epic=PROJ-100
 
 # List all projects
 jira-client projects
 
 # Create an issue
 jira-client create --project=PROJ --summary="Fix login bug" --type=Bug --description="Details here"
+jira-client create --project=PROJ --summary="New task" --label=backend --epic=PROJ-100
 
 # Add a comment
 jira-client comment PROJ-123 "Done, deployed to staging"
