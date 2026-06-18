@@ -106,7 +106,7 @@ jira-client board --assignee=me
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request.
+Contributions are welcome! Please open an issue or submit a pull request. See [TODO.md](TODO.md) for planned improvements.
 
 This project uses [Conventional Commits](https://www.conventionalcommits.org/). Make sure your commit messages follow the format:
 
