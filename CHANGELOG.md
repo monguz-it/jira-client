@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/monguz-it/jira-client/compare/v1.0.0...v1.1.0) (2026-06-18)
+
+
+### Features
+
+* add --label and --epic options to search and create commands ([d6821ac](https://github.com/monguz-it/jira-client/commit/d6821ac533f26b10d1c1ae08b8aa952a5b2cf6ed))
+
 # 1.0.0 (2026-06-18)
 
 
