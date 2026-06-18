@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/monguz-it/jira-client/compare/v1.1.0...v1.2.0) (2026-06-18)
+
+
+### Features
+
+* add update command and improve validation ([39c0d4c](https://github.com/monguz-it/jira-client/commit/39c0d4c8491ed9f94095d3b84423ca8062cf42a1))
+
 # [1.1.0](https://github.com/monguz-it/jira-client/compare/v1.0.0...v1.1.0) (2026-06-18)
 
 
