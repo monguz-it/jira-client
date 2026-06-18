@@ -54,6 +54,9 @@ class App
             case 'transition':
                 $this->commandTransition();
                 break;
+            case 'update':
+                $this->commandUpdate();
+                break;
             case 'projects':
                 $this->commandProjects();
                 break;
@@ -136,14 +139,17 @@ class App
         $this->output->line('  jira-client <command> [arguments] [--options]');
         $this->output->line();
         $this->output->line($this->output->color('Commands:', Color::YELLOW));
-        $this->output->line('  ' . $this->output->color('show', Color::GREEN) . ' <key>                          Show issue details');
+        $this->output->line('  ' . $this->output->color('projects', Color::GREEN) . '                               List all projects');
         $this->output->line('  ' . $this->output->color('search', Color::GREEN) . ' [--project=X] [--status=X]    Search issues');
         $this->output->line('         [--assignee=X] [--text=X]');
         $this->output->line('         [--label=X] [--epic=X]');
-        $this->output->line('  ' . $this->output->color('projects', Color::GREEN) . '                               List all projects');
+        $this->output->line('  ' . $this->output->color('show', Color::GREEN) . ' <key>                          Show issue details');
         $this->output->line('  ' . $this->output->color('create', Color::GREEN) . ' --project=X --summary="..."   Create an issue');
         $this->output->line('         [--type=Task] [--description="..."]');
         $this->output->line('         [--label=X] [--epic=X]');
+        $this->output->line('  ' . $this->output->color('update', Color::GREEN) . ' <key> [--summary="..."]       Update an issue');
+        $this->output->line('         [--type=X] [--label=X]');
+        $this->output->line('         [--epic=X] [--description="..."]');
         $this->output->line('  ' . $this->output->color('comment', Color::GREEN) . ' <key> "text"                  Add a comment');
         $this->output->line('  ' . $this->output->color('transition', Color::GREEN) . ' <key> "Status Name"          Change issue status');
         $this->output->line();
@@ -185,6 +191,7 @@ class App
         if (!$key) {
             throw new CommandException('Usage: jira-client show <ISSUE-KEY>');
         }
+        $this->validateKey($key);
 
         $issue = $this->getClient()->get("/rest/api/3/issue/$key");
         $fields = $issue['fields'];
@@ -307,7 +314,7 @@ class App
             ];
         }
         if ($label) {
-            $body['fields']['labels'] = [$label];
+            $body['fields']['labels'] = array_map('trim', explode(',', $label));
         }
         if ($epic) {
             $body['fields']['parent'] = ['key' => $epic];
@@ -330,6 +337,7 @@ class App
         if (!$key || !$text) {
             throw new CommandException('Usage: jira-client comment <ISSUE-KEY> "text"');
         }
+        $this->validateKey($key);
 
         $body = [
             'body' => [
@@ -358,6 +366,7 @@ class App
         if (!$key || !$targetName) {
             throw new CommandException('Usage: jira-client transition <ISSUE-KEY> "Status Name"');
         }
+        $this->validateKey($key);
 
         $transitions = $this->getClient()->get("/rest/api/3/issue/$key/transitions");
         $match = null;
@@ -386,10 +395,72 @@ class App
         $this->output->success("$key → {$match['name']}");
     }
 
+    /**
+     * @throws CommandException
+     */
+    private function commandUpdate(): void
+    {
+        $key = $this->parser->arg(0);
+        if (!$key) {
+            throw new CommandException('Usage: jira-client update <ISSUE-KEY> [--summary="..."] [--type=X] [--label=X] [--epic=X] [--description="..."]');
+        }
+        $this->validateKey($key);
+
+        $fields = [];
+        $changed = [];
+
+        if ($summary = $this->parser->option('summary')) {
+            $fields['summary'] = $summary;
+            $changed[] = 'summary';
+        }
+        if ($type = $this->parser->option('type')) {
+            $fields['issuetype'] = ['name' => $type];
+            $changed[] = 'type';
+        }
+        if ($label = $this->parser->option('label')) {
+            $fields['labels'] = array_map('trim', explode(',', $label));
+            $changed[] = 'labels';
+        }
+        if ($epic = $this->parser->option('epic')) {
+            $fields['parent'] = ['key' => $epic];
+            $changed[] = 'epic';
+        }
+        if ($description = $this->parser->option('description')) {
+            $fields['description'] = [
+                'type' => 'doc',
+                'version' => 1,
+                'content' => [[
+                    'type' => 'paragraph',
+                    'content' => [['type' => 'text', 'text' => $description]],
+                ]],
+            ];
+            $changed[] = 'description';
+        }
+
+        if (empty($fields)) {
+            throw new CommandException('Provide at least one field to update: --summary, --type, --label, --epic, --description');
+        }
+
+        $this->getClient()->put("/rest/api/3/issue/$key", ['fields' => $fields]);
+
+        $this->output->line();
+        $this->output->success("$key updated (" . implode(', ', $changed) . ')');
+    }
+
     private function defaultProject(): ?string
     {
         $project = getenv('JIRA_PROJECT');
         return $project !== false ? $project : null;
+    }
+
+    /**
+     * @throws CommandException
+     */
+    private function validateKey(string $key): void
+    {
+        if (!preg_match('/^[A-Z][A-Z0-9]+-\d+$/', $key)) {
+            throw new CommandException("Invalid issue key format: $key (expected FORMAT: PROJ-123)");
+        }
     }
 
     /**

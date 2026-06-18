@@ -18,6 +18,7 @@ A standalone PHP CLI tool to interact with Jira Cloud. No dependencies required 
 - Search issues with simple filters
 - List projects
 - Create issues
+- Update issues
 - Add comments
 - Transition issue statuses
 
@@ -78,10 +79,14 @@ jira-client projects
 
 # Create an issue
 jira-client create --project=PROJ --summary="Fix login bug" --type=Bug --description="Details here"
-jira-client create --project=PROJ --summary="New task" --label=backend --epic=PROJ-100
+jira-client create --project=PROJ --summary="New task" --label=backend,api --epic=PROJ-100
 
 # Add a comment
 jira-client comment PROJ-123 "Done, deployed to staging"
+
+# Update an issue
+jira-client update PROJ-123 --summary="New title"
+jira-client update PROJ-123 --label=frontend,backend --epic=PROJ-50
 
 # Change issue status
 jira-client transition PROJ-123 "In Progress"

@@ -134,4 +134,48 @@ class AppTest extends TestCase
         $this->assertStringContainsString('--label', $output);
         $this->assertStringContainsString('--epic', $output);
     }
+
+    public function testUpdateWithoutKeyThrows(): void
+    {
+        $parser = new CommandParser(['jira-client', 'update']);
+        $client = new JiraClient('https://test.atlassian.net', 'a@b.com', 'token');
+        $app = new App($parser, new Output(), $client);
+
+        $this->expectException(CommandException::class);
+        $this->expectExceptionMessage('Usage: jira-client update');
+        $app->run();
+    }
+
+    public function testUpdateWithoutFieldsThrows(): void
+    {
+        $parser = new CommandParser(['jira-client', 'update', 'PROJ-1']);
+        $client = new JiraClient('https://test.atlassian.net', 'a@b.com', 'token');
+        $app = new App($parser, new Output(), $client);
+
+        $this->expectException(CommandException::class);
+        $this->expectExceptionMessage('Provide at least one field to update');
+        $app->run();
+    }
+
+    public function testUpdateWithFieldMakesApiCall(): void
+    {
+        $parser = new CommandParser(['jira-client', 'update', 'PROJ-1', '--summary=New title']);
+        $client = new JiraClient('https://test.atlassian.net', 'a@b.com', 'token');
+        $app = new App($parser, new Output(), $client);
+
+        // Should throw RuntimeException (HTTP), not CommandException
+        $this->expectException(RuntimeException::class);
+        $app->run();
+    }
+
+    public function testInvalidKeyFormatThrows(): void
+    {
+        $parser = new CommandParser(['jira-client', 'show', 'invalid']);
+        $client = new JiraClient('https://test.atlassian.net', 'a@b.com', 'token');
+        $app = new App($parser, new Output(), $client);
+
+        $this->expectException(CommandException::class);
+        $this->expectExceptionMessage('Invalid issue key format');
+        $app->run();
+    }
 }

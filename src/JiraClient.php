@@ -55,6 +55,15 @@ class JiraClient
     }
 
     /**
+     * @param array<string, mixed> $body
+     * @return array<string, mixed>
+     */
+    public function put(string $path, array $body): array
+    {
+        return $this->request('PUT', $this->url . $path, $body);
+    }
+
+    /**
      * @param array<string, mixed>|null $body
      * @return array<string, mixed>
      */
