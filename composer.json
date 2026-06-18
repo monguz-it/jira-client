@@ -14,7 +14,7 @@
         "ext-mbstring": "*"
     },
     "require-dev": {
-        "phpstan/phpstan": "^1.12",
+        "phpstan/phpstan": "^2.2",
         "phpunit/phpunit": "^9.6",
         "friendsofphp/php-cs-fixer": "^3.65"
     },
