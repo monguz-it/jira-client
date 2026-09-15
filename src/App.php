@@ -309,14 +309,7 @@ class App
         ];
 
         if ($description) {
-            $body['fields']['description'] = [
-                'type' => 'doc',
-                'version' => 1,
-                'content' => [[
-                    'type' => 'paragraph',
-                    'content' => [['type' => 'text', 'text' => $description]],
-                ]],
-            ];
+            $body['fields']['description'] = $this->textToAdf($description);
         }
         if ($label) {
             $body['fields']['labels'] = array_map('trim', explode(',', $label));
@@ -345,14 +338,7 @@ class App
         $this->validateKey($key);
 
         $body = [
-            'body' => [
-                'type' => 'doc',
-                'version' => 1,
-                'content' => [[
-                    'type' => 'paragraph',
-                    'content' => [['type' => 'text', 'text' => $text]],
-                ]],
-            ],
+            'body' => $this->textToAdf($text),
         ];
 
         $this->getClient()->post("/rest/api/3/issue/$key/comment", $body);
@@ -431,14 +417,7 @@ class App
             $changed[] = 'epic';
         }
         if ($description = $this->parser->option('description')) {
-            $fields['description'] = [
-                'type' => 'doc',
-                'version' => 1,
-                'content' => [[
-                    'type' => 'paragraph',
-                    'content' => [['type' => 'text', 'text' => $description]],
-                ]],
-            ];
+            $fields['description'] = $this->textToAdf($description);
             $changed[] = 'description';
         }
 
@@ -577,5 +556,33 @@ class App
             return '—';
         }
         return date('Y-m-d H:i', strtotime($date));
+    }
+
+    /**
+     * Builds an Atlassian Document Format (ADF) doc from plain text, turning
+     * each line into its own paragraph so newlines are preserved in Jira.
+     * Both real newlines and the literal "\n" sequence (convenient from the
+     * shell) are treated as line breaks. Empty lines become empty paragraphs.
+     *
+     * @return array<string, mixed>
+     */
+    private function textToAdf(string $text): array
+    {
+        // Allow the literal "\n" typed on the command line to act as a newline.
+        $normalized = str_replace(['\\n', "\r\n", "\r"], "\n", $text);
+
+        $content = [];
+        foreach (explode("\n", $normalized) as $line) {
+            if ($line === '') {
+                $content[] = ['type' => 'paragraph', 'content' => []];
+                continue;
+            }
+            $content[] = [
+                'type' => 'paragraph',
+                'content' => [['type' => 'text', 'text' => $line]],
+            ];
+        }
+
+        return ['type' => 'doc', 'version' => 1, 'content' => $content];
     }
 }

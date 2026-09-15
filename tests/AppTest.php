@@ -203,4 +203,62 @@ class AppTest extends TestCase
         $app->run();
         putenv('JIRA_BOARD');
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function invokeTextToAdf(string $text): array
+    {
+        $app = new App(new CommandParser(['jira-client', 'help']), new Output());
+        $ref = new ReflectionMethod(App::class, 'textToAdf');
+        $ref->setAccessible(true);
+
+        /** @var array<string, mixed> $adf */
+        $adf = $ref->invoke($app, $text);
+
+        return $adf;
+    }
+
+    public function testTextToAdf_SingleLine_ProducesOneParagraph(): void
+    {
+        // Given / When: a single-line text
+        $adf = $this->invokeTextToAdf('Just one line.');
+
+        // Then: one paragraph with that text
+        $this->assertSame('doc', $adf['type']);
+        $this->assertCount(1, $adf['content']);
+        $this->assertSame('Just one line.', $adf['content'][0]['content'][0]['text']);
+    }
+
+    public function testTextToAdf_LiteralBackslashN_SplitsIntoParagraphs(): void
+    {
+        // Given / When: text with the literal "\n" sequence (as typed in a shell)
+        $adf = $this->invokeTextToAdf('First line.\nSecond line.');
+
+        // Then: two separate paragraphs
+        $this->assertCount(2, $adf['content']);
+        $this->assertSame('First line.', $adf['content'][0]['content'][0]['text']);
+        $this->assertSame('Second line.', $adf['content'][1]['content'][0]['text']);
+    }
+
+    public function testTextToAdf_RealNewline_SplitsIntoParagraphs(): void
+    {
+        // Given / When: text with a real newline
+        $adf = $this->invokeTextToAdf("First.\nSecond.");
+
+        // Then: two separate paragraphs
+        $this->assertCount(2, $adf['content']);
+        $this->assertSame('First.', $adf['content'][0]['content'][0]['text']);
+        $this->assertSame('Second.', $adf['content'][1]['content'][0]['text']);
+    }
+
+    public function testTextToAdf_EmptyLine_ProducesEmptyParagraph(): void
+    {
+        // Given / When: text with a blank line between two paragraphs
+        $adf = $this->invokeTextToAdf('A\n\nB');
+
+        // Then: three blocks, the middle one an empty paragraph
+        $this->assertCount(3, $adf['content']);
+        $this->assertSame([], $adf['content'][1]['content']);
+    }
 }
