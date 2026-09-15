@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/monguz-it/jira-client/compare/v1.3.0...v1.4.0) (2026-09-15)
+
+
+### Features
+
+* preserve newlines in description and comment bodies ([81da646](https://github.com/monguz-it/jira-client/commit/81da6464378c5f1a39218c83899d9f548aec5e5d))
+
 # [1.3.0](https://github.com/monguz-it/jira-client/compare/v1.2.0...v1.3.0) (2026-06-18)
 
 
