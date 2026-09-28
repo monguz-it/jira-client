@@ -146,14 +146,14 @@ class App
         $this->output->line('  ' . $this->output->color('board', Color::GREEN) . ' [--assignee=X] [--project=X]  Show board issues');
         $this->output->line('  ' . $this->output->color('search', Color::GREEN) . ' [--project=X] [--status=X]    Search issues');
         $this->output->line('         [--assignee=X] [--text=X]');
-        $this->output->line('         [--label=X] [--epic=X]');
+        $this->output->line('         [--label=X] [--parent=X]');
         $this->output->line('  ' . $this->output->color('show', Color::GREEN) . ' <key>                          Show issue details');
         $this->output->line('  ' . $this->output->color('create', Color::GREEN) . ' --project=X --summary="..."   Create an issue');
         $this->output->line('         [--type=Task] [--description="..."]');
-        $this->output->line('         [--label=X] [--epic=X]');
+        $this->output->line('         [--label=X] [--parent=X]');
         $this->output->line('  ' . $this->output->color('update', Color::GREEN) . ' <key> [--summary="..."]       Update an issue');
         $this->output->line('         [--type=X] [--label=X]');
-        $this->output->line('         [--epic=X] [--description="..."]');
+        $this->output->line('         [--parent=X] [--description="..."]');
         $this->output->line('  ' . $this->output->color('comment', Color::GREEN) . ' <key> "text"                  Add a comment');
         $this->output->line('  ' . $this->output->color('transition', Color::GREEN) . ' <key> "Status Name"          Change issue status');
         $this->output->line();
@@ -251,8 +251,8 @@ class App
         if ($label = $this->parser->option('label')) {
             $conditions[] = "labels = \"$label\"";
         }
-        if ($epic = $this->parser->option('epic')) {
-            $conditions[] = "parent = \"$epic\"";
+        if ($parent = $this->parser->option('parent')) {
+            $conditions[] = "parent = \"$parent\"";
         }
 
         if (empty($conditions)) {
@@ -302,7 +302,7 @@ class App
         $description = $this->parser->option('description');
 
         $label = $this->parser->option('label');
-        $epic = $this->parser->option('epic');
+        $parent = $this->parser->option('parent');
 
         $body = [
             'fields' => [
@@ -318,15 +318,48 @@ class App
         if ($label) {
             $body['fields']['labels'] = array_map('trim', explode(',', $label));
         }
-        if ($epic) {
-            $body['fields']['parent'] = ['key' => $epic];
+        if ($parent) {
+            $body['fields']['parent'] = ['key' => $parent];
         }
 
-        $result = $this->getClient()->post('/rest/api/3/issue', $body);
+        try {
+            $result = $this->getClient()->post('/rest/api/3/issue', $body);
+        } catch (RuntimeException $e) {
+            if (stripos($e->getMessage(), 'issue type') !== false || stripos($e->getMessage(), 'issuetype') !== false) {
+                $types = $this->availableIssueTypes($project);
+                $hint = $types ? "\nAvailable types for $project: " . implode(', ', $types) : '';
+                throw new CommandException("Invalid issue type \"$type\" for $project.$hint");
+            }
+            throw $e;
+        }
 
         $this->output->line();
         $this->output->success("Issue created: {$result['key']}");
         $this->output->line('  ' . $this->getClient()->getBaseUrl() . '/browse/' . $result['key']);
+    }
+
+    /**
+     * Fetches the issue type names available in a project. Returns an empty
+     * array if they cannot be retrieved, so callers can degrade gracefully.
+     *
+     * @return array<int, string>
+     */
+    private function availableIssueTypes(string $project): array
+    {
+        try {
+            $meta = $this->getClient()->get("/rest/api/3/project/$project");
+        } catch (RuntimeException $e) {
+            return [];
+        }
+
+        $names = [];
+        foreach ($meta['issueTypes'] ?? [] as $issueType) {
+            if (isset($issueType['name'])) {
+                $names[] = $issueType['name'];
+            }
+        }
+
+        return $names;
     }
 
     /**
@@ -397,7 +430,7 @@ class App
     {
         $key = $this->parser->arg(0);
         if (!$key) {
-            throw new CommandException('Usage: jira-client update <ISSUE-KEY> [--summary="..."] [--type=X] [--label=X] [--epic=X] [--description="..."]');
+            throw new CommandException('Usage: jira-client update <ISSUE-KEY> [--summary="..."] [--type=X] [--label=X] [--parent=X] [--description="..."]');
         }
         $this->validateKey($key);
 
@@ -416,9 +449,9 @@ class App
             $fields['labels'] = array_map('trim', explode(',', $label));
             $changed[] = 'labels';
         }
-        if ($epic = $this->parser->option('epic')) {
-            $fields['parent'] = ['key' => $epic];
-            $changed[] = 'epic';
+        if ($parent = $this->parser->option('parent')) {
+            $fields['parent'] = ['key' => $parent];
+            $changed[] = 'parent';
         }
         if ($description = $this->parser->option('description')) {
             $fields['description'] = $this->textToAdf($description);
@@ -426,7 +459,7 @@ class App
         }
 
         if (empty($fields)) {
-            throw new CommandException('Provide at least one field to update: --summary, --type, --label, --epic, --description');
+            throw new CommandException('Provide at least one field to update: --summary, --type, --label, --parent, --description');
         }
 
         $this->getClient()->put("/rest/api/3/issue/$key", ['fields' => $fields]);

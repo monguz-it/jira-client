@@ -87,6 +87,41 @@ class AppTest extends TestCase
         $app->run();
     }
 
+    public function testCreate_InvalidIssueType_ThrowsWithAvailableTypes(): void
+    {
+        // Given: a client whose POST fails with an issue type error and whose
+        // project lookup returns two valid issue types
+        $client = $this->createMock(JiraClient::class);
+        $client->method('post')
+            ->willThrowException(new RuntimeException('Jira API error: The issue type selected is invalid.'));
+        $client->method('get')
+            ->willReturn(['issueTypes' => [['name' => 'Task'], ['name' => 'Sub-task']]]);
+
+        $parser = new CommandParser(['jira-client', 'create', '--project=PROJ', '--summary=X', '--type=Bogus']);
+        $app = new App($parser, new Output(), $client);
+
+        // When / Then: a CommandException lists the available types
+        $this->expectException(CommandException::class);
+        $this->expectExceptionMessage('Available types for PROJ: Task, Sub-task');
+        $app->run();
+    }
+
+    public function testCreate_NonTypeError_IsRethrownUnchanged(): void
+    {
+        // Given: a client whose POST fails with an unrelated error
+        $client = $this->createMock(JiraClient::class);
+        $client->method('post')
+            ->willThrowException(new RuntimeException('Jira API error: Something else'));
+
+        $parser = new CommandParser(['jira-client', 'create', '--project=PROJ', '--summary=X']);
+        $app = new App($parser, new Output(), $client);
+
+        // When / Then: the original RuntimeException propagates
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Something else');
+        $app->run();
+    }
+
     public function testSearchWithoutFiltersThrows(): void
     {
         putenv('JIRA_PROJECT');
@@ -111,10 +146,10 @@ class AppTest extends TestCase
         $app->run();
     }
 
-    public function testSearchWithEpicIsValidFilter(): void
+    public function testSearchWithParentIsValidFilter(): void
     {
         putenv('JIRA_PROJECT');
-        $parser = new CommandParser(['jira-client', 'search', '--epic=PROJ-100']);
+        $parser = new CommandParser(['jira-client', 'search', '--parent=PROJ-100']);
         $client = new JiraClient('https://test.atlassian.net', 'a@b.com', 'token');
         $app = new App($parser, new Output(), $client);
 
@@ -122,7 +157,7 @@ class AppTest extends TestCase
         $app->run();
     }
 
-    public function testHelpShowsLabelAndEpicOptions(): void
+    public function testHelpShowsLabelAndParentOptions(): void
     {
         $parser = new CommandParser(['jira-client', 'help']);
         $app = new App($parser, new Output());
@@ -132,7 +167,7 @@ class AppTest extends TestCase
         $output = ob_get_clean();
 
         $this->assertStringContainsString('--label', $output);
-        $this->assertStringContainsString('--epic', $output);
+        $this->assertStringContainsString('--parent', $output);
     }
 
     public function testUpdateWithoutKeyThrows(): void
