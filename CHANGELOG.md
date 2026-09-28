@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/monguz-it/jira-client/compare/v1.4.0...v1.5.0) (2026-09-28)
+
+
+### Features
+
+* **show:** list subtasks in issue detail ([445e715](https://github.com/monguz-it/jira-client/commit/445e715aa033be2f9f96ac84553c7d600e0e8cc5))
+
 # [1.4.0](https://github.com/monguz-it/jira-client/compare/v1.3.0...v1.4.0) (2026-09-15)
 
 
