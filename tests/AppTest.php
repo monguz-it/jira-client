@@ -261,4 +261,46 @@ class AppTest extends TestCase
         $this->assertCount(3, $adf['content']);
         $this->assertSame([], $adf['content'][1]['content']);
     }
+
+    public function testRenderSubtasks_WithSubtasks_PrintsKeyStatusAndSummary(): void
+    {
+        // Given: an issue with two subtasks
+        $app = new App(new CommandParser(['jira-client', 'help']), new Output());
+        $ref = new ReflectionMethod(App::class, 'renderSubtasks');
+        $ref->setAccessible(true);
+        $subtasks = [
+            ['key' => 'GYM-55', 'fields' => ['summary' => 'Setup build SCSS', 'status' => ['name' => 'Done']]],
+            ['key' => 'GYM-62', 'fields' => ['summary' => 'Setup Stylelint', 'status' => ['name' => 'To Do']]],
+        ];
+
+        // When: the subtasks are rendered
+        ob_start();
+        $ref->invoke($app, $subtasks);
+        $output = ob_get_clean();
+
+        // Then: the section header, keys, statuses and summaries appear
+        $this->assertStringContainsString('Subtasks:', $output);
+        $this->assertStringContainsString('GYM-55', $output);
+        $this->assertStringContainsString('Done', $output);
+        $this->assertStringContainsString('GYM-62', $output);
+        $this->assertStringContainsString('To Do', $output);
+        $this->assertStringContainsString('Setup Stylelint', $output);
+    }
+
+    public function testRenderSubtasks_MissingFields_FallsBackToDash(): void
+    {
+        // Given: a subtask with no key and no fields
+        $app = new App(new CommandParser(['jira-client', 'help']), new Output());
+        $ref = new ReflectionMethod(App::class, 'renderSubtasks');
+        $ref->setAccessible(true);
+
+        // When: the subtask is rendered
+        ob_start();
+        $ref->invoke($app, [['fields' => []]]);
+        $output = ob_get_clean();
+
+        // Then: it degrades to a dash instead of erroring
+        $this->assertStringContainsString('Subtasks:', $output);
+        $this->assertStringContainsString('—', $output);
+    }
 }

@@ -218,6 +218,10 @@ class App
             $this->output->line($this->extractText($fields['description']));
         }
 
+        if (!empty($fields['subtasks'])) {
+            $this->renderSubtasks($fields['subtasks']);
+        }
+
         $this->output->line();
         $this->output->line($this->output->color('URL:', Color::GRAY) . ' ' . $this->getClient()->getBaseUrl() . '/browse/' . $issue['key']);
     }
@@ -531,6 +535,27 @@ class App
             throw new CommandException('Jira client not initialized');
         }
         return $this->client;
+    }
+
+    /**
+     * Renders the subtask list of an issue as a table (key, status, summary).
+     *
+     * @param array<int, array<string, mixed>> $subtasks
+     */
+    private function renderSubtasks(array $subtasks): void
+    {
+        $rows = array_map(function ($sub) {
+            $fields = $sub['fields'] ?? [];
+            return [
+                $this->output->color($sub['key'] ?? '—', Color::BOLD_BLUE),
+                $fields['status']['name'] ?? '—',
+                mb_substr($fields['summary'] ?? '', 0, 60),
+            ];
+        }, $subtasks);
+
+        $this->output->line();
+        $this->output->line($this->output->color('Subtasks:', Color::YELLOW));
+        $this->output->table(['KEY', 'STATUS', 'SUMMARY'], $rows);
     }
 
     /**
