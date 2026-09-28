@@ -1,3 +1,10 @@
+# [2.1.0](https://github.com/monguz-it/jira-client/compare/v2.0.0...v2.1.0) (2026-09-28)
+
+
+### Features
+
+* **create:** add --priority option to create and update ([053c10a](https://github.com/monguz-it/jira-client/commit/053c10aa0589ab2a8d5d5dd4db038cfeef5038a8))
+
 # [2.0.0](https://github.com/monguz-it/jira-client/compare/v1.5.0...v2.0.0) (2026-09-28)
 
 
