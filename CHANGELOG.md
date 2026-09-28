@@ -1,3 +1,15 @@
+# [2.0.0](https://github.com/monguz-it/jira-client/compare/v1.5.0...v2.0.0) (2026-09-28)
+
+
+### Features
+
+* **create:** rename --epic to --parent and enrich issue type errors ([f6eac40](https://github.com/monguz-it/jira-client/commit/f6eac40d122eca3bb68ac5913a052599a7c314c6))
+
+
+### BREAKING CHANGES
+
+* **create:** the --epic option is removed; use --parent instead.
+
 # [1.5.0](https://github.com/monguz-it/jira-client/compare/v1.4.0...v1.5.0) (2026-09-28)
 
 
