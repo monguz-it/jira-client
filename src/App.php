@@ -150,10 +150,10 @@ class App
         $this->output->line('  ' . $this->output->color('show', Color::GREEN) . ' <key>                          Show issue details');
         $this->output->line('  ' . $this->output->color('create', Color::GREEN) . ' --project=X --summary="..."   Create an issue');
         $this->output->line('         [--type=Task] [--description="..."]');
-        $this->output->line('         [--label=X] [--parent=X]');
+        $this->output->line('         [--label=X] [--parent=X] [--priority=X]');
         $this->output->line('  ' . $this->output->color('update', Color::GREEN) . ' <key> [--summary="..."]       Update an issue');
         $this->output->line('         [--type=X] [--label=X]');
-        $this->output->line('         [--parent=X] [--description="..."]');
+        $this->output->line('         [--parent=X] [--priority=X] [--description="..."]');
         $this->output->line('  ' . $this->output->color('comment', Color::GREEN) . ' <key> "text"                  Add a comment');
         $this->output->line('  ' . $this->output->color('transition', Color::GREEN) . ' <key> "Status Name"          Change issue status');
         $this->output->line();
@@ -303,6 +303,7 @@ class App
 
         $label = $this->parser->option('label');
         $parent = $this->parser->option('parent');
+        $priority = $this->parser->option('priority');
 
         $body = [
             'fields' => [
@@ -321,6 +322,9 @@ class App
         if ($parent) {
             $body['fields']['parent'] = ['key' => $parent];
         }
+        if ($priority) {
+            $body['fields']['priority'] = ['name' => $priority];
+        }
 
         try {
             $result = $this->getClient()->post('/rest/api/3/issue', $body);
@@ -329,6 +333,11 @@ class App
                 $types = $this->availableIssueTypes($project);
                 $hint = $types ? "\nAvailable types for $project: " . implode(', ', $types) : '';
                 throw new CommandException("Invalid issue type \"$type\" for $project.$hint");
+            }
+            if (stripos($e->getMessage(), 'priority') !== false) {
+                $priorities = $this->availablePriorities();
+                $hint = $priorities ? "\nAvailable priorities: " . implode(', ', $priorities) : '';
+                throw new CommandException("Invalid priority \"$priority\".$hint");
             }
             throw $e;
         }
@@ -356,6 +365,30 @@ class App
         foreach ($meta['issueTypes'] ?? [] as $issueType) {
             if (isset($issueType['name'])) {
                 $names[] = $issueType['name'];
+            }
+        }
+
+        return $names;
+    }
+
+    /**
+     * Fetches the priority names available in the instance. Returns an empty
+     * array if they cannot be retrieved, so callers can degrade gracefully.
+     *
+     * @return array<int, string>
+     */
+    private function availablePriorities(): array
+    {
+        try {
+            $priorities = $this->getClient()->get('/rest/api/3/priority');
+        } catch (RuntimeException $e) {
+            return [];
+        }
+
+        $names = [];
+        foreach ($priorities as $priority) {
+            if (is_array($priority) && isset($priority['name'])) {
+                $names[] = $priority['name'];
             }
         }
 
@@ -430,7 +463,7 @@ class App
     {
         $key = $this->parser->arg(0);
         if (!$key) {
-            throw new CommandException('Usage: jira-client update <ISSUE-KEY> [--summary="..."] [--type=X] [--label=X] [--parent=X] [--description="..."]');
+            throw new CommandException('Usage: jira-client update <ISSUE-KEY> [--summary="..."] [--type=X] [--label=X] [--parent=X] [--priority=X] [--description="..."]');
         }
         $this->validateKey($key);
 
@@ -453,13 +486,17 @@ class App
             $fields['parent'] = ['key' => $parent];
             $changed[] = 'parent';
         }
+        if ($priority = $this->parser->option('priority')) {
+            $fields['priority'] = ['name' => $priority];
+            $changed[] = 'priority';
+        }
         if ($description = $this->parser->option('description')) {
             $fields['description'] = $this->textToAdf($description);
             $changed[] = 'description';
         }
 
         if (empty($fields)) {
-            throw new CommandException('Provide at least one field to update: --summary, --type, --label, --parent, --description');
+            throw new CommandException('Provide at least one field to update: --summary, --type, --label, --parent, --priority, --description');
         }
 
         $this->getClient()->put("/rest/api/3/issue/$key", ['fields' => $fields]);

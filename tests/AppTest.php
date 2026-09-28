@@ -122,6 +122,47 @@ class AppTest extends TestCase
         $app->run();
     }
 
+    public function testCreate_WithPriority_SendsPriorityField(): void
+    {
+        // Given: a client that captures the POST body and returns a created issue
+        $captured = null;
+        $client = $this->createMock(JiraClient::class);
+        $client->method('post')
+            ->willReturnCallback(function ($path, $body) use (&$captured) {
+                $captured = $body;
+                return ['key' => 'PROJ-1'];
+            });
+
+        $parser = new CommandParser(['jira-client', 'create', '--project=PROJ', '--summary=X', '--priority=High']);
+        $app = new App($parser, new Output(), $client);
+
+        // When: the issue is created
+        ob_start();
+        $app->run();
+        ob_get_clean();
+
+        // Then: the priority field is included in the request body
+        $this->assertSame(['name' => 'High'], $captured['fields']['priority']);
+    }
+
+    public function testCreate_InvalidPriority_ThrowsWithAvailablePriorities(): void
+    {
+        // Given: a POST that fails on priority and a priority lookup with two values
+        $client = $this->createMock(JiraClient::class);
+        $client->method('post')
+            ->willThrowException(new RuntimeException('Jira API error: Invalid value for priority.'));
+        $client->method('get')
+            ->willReturn([['name' => 'High'], ['name' => 'Low']]);
+
+        $parser = new CommandParser(['jira-client', 'create', '--project=PROJ', '--summary=X', '--priority=Bogus']);
+        $app = new App($parser, new Output(), $client);
+
+        // When / Then: a CommandException lists the available priorities
+        $this->expectException(CommandException::class);
+        $this->expectExceptionMessage('Available priorities: High, Low');
+        $app->run();
+    }
+
     public function testSearchWithoutFiltersThrows(): void
     {
         putenv('JIRA_PROJECT');
@@ -168,6 +209,7 @@ class AppTest extends TestCase
 
         $this->assertStringContainsString('--label', $output);
         $this->assertStringContainsString('--parent', $output);
+        $this->assertStringContainsString('--priority', $output);
     }
 
     public function testUpdateWithoutKeyThrows(): void

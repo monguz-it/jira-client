@@ -83,6 +83,7 @@ jira-client projects
 # Create an issue
 jira-client create --project=PROJ --summary="Fix login bug" --type=Bug --description="Details here"
 jira-client create --project=PROJ --summary="New task" --label=backend,api --parent=PROJ-100
+jira-client create --project=PROJ --summary="Urgent fix" --priority=High
 
 # Add a comment
 jira-client comment PROJ-123 "Done, deployed to staging"
