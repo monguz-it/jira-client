@@ -1,3 +1,10 @@
+## [2.1.1](https://github.com/monguz-it/jira-client/compare/v2.1.0...v2.1.1) (2026-10-04)
+
+
+### Bug Fixes
+
+* **search:** migrate to /rest/api/3/search/jql endpoint ([71b5629](https://github.com/monguz-it/jira-client/commit/71b562970187dea73f62cfa7d55a1e482c506b78))
+
 # [2.1.0](https://github.com/monguz-it/jira-client/compare/v2.0.0...v2.1.0) (2026-09-28)
 
 
