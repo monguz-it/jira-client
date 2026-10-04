@@ -260,7 +260,11 @@ class App
         }
 
         $jql = implode(' AND ', $conditions) . ' ORDER BY updated DESC';
-        $result = $this->getClient()->get('/rest/api/3/search', ['jql' => $jql, 'maxResults' => '30']);
+        $result = $this->getClient()->get('/rest/api/3/search/jql', [
+            'jql' => $jql,
+            'maxResults' => '30',
+            'fields' => 'summary,status,assignee',
+        ]);
 
         if (empty($result['issues'])) {
             $this->output->info('No issues found.');
@@ -280,7 +284,7 @@ class App
         $this->output->table(['KEY', 'STATUS', 'ASSIGNEE', 'SUMMARY'], $rows);
         $this->output->line();
         $this->output->line($this->output->color(
-            sprintf('Showing %d of %d results', count($result['issues']), $result['total']),
+            sprintf('Showing %d result(s)', count($result['issues'])),
             Color::GRAY
         ));
     }

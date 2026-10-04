@@ -178,24 +178,73 @@ class AppTest extends TestCase
     public function testSearchWithLabelIsValidFilter(): void
     {
         putenv('JIRA_PROJECT');
+        // Given: --label as the only filter and a client returning no issues
         $parser = new CommandParser(['jira-client', 'search', '--label=backend']);
-        $client = new JiraClient('https://test.atlassian.net', 'a@b.com', 'token');
+        $client = $this->createMock(JiraClient::class);
+        $client->method('get')->willReturn(['issues' => []]);
         $app = new App($parser, new Output(), $client);
 
-        // Should throw RuntimeException (HTTP), not CommandException (missing filter)
-        $this->expectException(RuntimeException::class);
+        // When / Then: --label is accepted (no "missing filter" CommandException)
+        ob_start();
         $app->run();
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('No issues found', $output);
     }
 
     public function testSearchWithParentIsValidFilter(): void
     {
         putenv('JIRA_PROJECT');
+        // Given: --parent as the only filter and a client returning no issues
         $parser = new CommandParser(['jira-client', 'search', '--parent=PROJ-100']);
-        $client = new JiraClient('https://test.atlassian.net', 'a@b.com', 'token');
+        $client = $this->createMock(JiraClient::class);
+        $client->method('get')->willReturn(['issues' => []]);
         $app = new App($parser, new Output(), $client);
 
-        $this->expectException(RuntimeException::class);
+        // When / Then: --parent is accepted (no "missing filter" CommandException)
+        ob_start();
         $app->run();
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('No issues found', $output);
+    }
+
+    public function testSearch_UsesJqlEndpointWithExplicitFields(): void
+    {
+        // Given: a client capturing the GET path and query, returning one issue
+        $capturedPath = null;
+        $capturedQuery = null;
+        $client = $this->createMock(JiraClient::class);
+        $client->method('get')
+            ->willReturnCallback(function ($path, $query = []) use (&$capturedPath, &$capturedQuery) {
+                $capturedPath = $path;
+                $capturedQuery = $query;
+
+                return [
+                    'issues' => [
+                        [
+                            'key' => 'PROJ-1',
+                            'fields' => [
+                                'status' => ['name' => 'To Do'],
+                                'assignee' => ['displayName' => 'Jane'],
+                                'summary' => 'Something',
+                            ],
+                        ],
+                    ],
+                ];
+            });
+
+        $parser = new CommandParser(['jira-client', 'search', '--project=PROJ']);
+        $app = new App($parser, new Output(), $client);
+
+        // When: the search command runs
+        ob_start();
+        $app->run();
+        ob_get_clean();
+
+        // Then: it calls the new /search/jql endpoint requesting the fields it renders
+        $this->assertSame('/rest/api/3/search/jql', $capturedPath);
+        $this->assertSame('summary,status,assignee', $capturedQuery['fields']);
     }
 
     public function testHelpShowsLabelAndParentOptions(): void
