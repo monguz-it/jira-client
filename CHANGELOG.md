@@ -1,3 +1,10 @@
+## [2.1.2](https://github.com/monguz-it/jira-client/compare/v2.1.1...v2.1.2) (2026-10-04)
+
+
+### Bug Fixes
+
+* **deps:** patch js-yaml and undici transitive vulnerabilities ([9fbd9aa](https://github.com/monguz-it/jira-client/commit/9fbd9aae7396745d124b8aa1da5397ae2f2aa85b))
+
 ## [2.1.1](https://github.com/monguz-it/jira-client/compare/v2.1.0...v2.1.1) (2026-10-04)
 
 
